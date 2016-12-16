@@ -10,6 +10,8 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.GetResponse;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeoutException;
 
@@ -64,18 +66,21 @@ public static final String RESULTQUEUENAME = "TauResultQueue";
         }
         System.out.println("Done gathering results");
         System.out.println("Calculating average");
-        Double result = sum(results) / calcs;
+        BigDecimal result = average(results, calcs);
         System.out.println("Average calculated");
         System.out.println("Tau = " + result);
-        System.out.println("pi = tau/2 = " + .5*result);
+        BigDecimal two = new BigDecimal(2);
+        System.out.println("pi = tau/2 = " + result.divide(two , RoundingMode.HALF_UP));
         channel.close();
         connection.close();
     }
     
     
-    public static double sum(double[] dbArray) {
-        double sum = 0;
-        for(double dbValue : dbArray) sum += dbValue;
-        return sum;
+    public static BigDecimal average(double[] dbArray, int amount) {
+        BigDecimal result = new BigDecimal(0.0);
+        result.setScale(10, RoundingMode.HALF_UP);
+        for(double x: dbArray) {result = result.add(new BigDecimal(x));}
+        result = result.divide(new BigDecimal(amount), RoundingMode.HALF_UP);
+        return result;
     }
 }
