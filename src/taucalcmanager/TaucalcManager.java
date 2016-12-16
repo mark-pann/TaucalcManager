@@ -40,7 +40,7 @@ public static final String RESULTQUEUENAME = "TauResultQueue";
         
         int calcs = Integer.parseInt(args[0]);
         int triesPerCalc = Integer.parseInt(args[1]);
-        double[] results = new double[calcs];
+        int[] results = new int[calcs];
         byte[] task = {
             (byte)(triesPerCalc>>24),
             (byte)(triesPerCalc>>16),
@@ -61,13 +61,12 @@ public static final String RESULTQUEUENAME = "TauResultQueue";
                 response = channel.basicGet(RESULTQUEUENAME, true);
             }while(response == null);
             
-            results[i] = ByteBuffer.wrap(response.getBody()).getDouble();
+            results[i] = ByteBuffer.wrap(response.getBody()).getInt();
             System.out.println("Received result: " + results[i]);
         }
         System.out.println("Done gathering results");
-        System.out.println("Calculating average");
-        BigDecimal result = average(results, calcs);
-        System.out.println("Average calculated");
+        System.out.println("Calculating tau");
+        BigDecimal result = sumToTau(sum(results), calcs, triesPerCalc);
         System.out.println("Tau = " + result);
         BigDecimal two = new BigDecimal(2);
         System.out.println("pi = tau/2 = " + result.divide(two , RoundingMode.HALF_UP));
@@ -76,11 +75,19 @@ public static final String RESULTQUEUENAME = "TauResultQueue";
     }
     
     
-    public static BigDecimal average(double[] dbArray, int amount) {
-        BigDecimal result = new BigDecimal(0.0);
-        result.setScale(10, RoundingMode.HALF_UP);
-        for(double x: dbArray) {result = result.add(new BigDecimal(x));}
-        result = result.divide(new BigDecimal(amount), RoundingMode.HALF_UP);
+    public static long sum(int[] intArray) {
+        long result = 0;
+        for(int x: intArray) {result += x;}
+        System.out.println(result);
         return result;
+    }
+    
+    public static BigDecimal sumToTau(long summ, int amount, int samples) {
+        BigDecimal result = new BigDecimal(summ);
+        BigDecimal divisor = new BigDecimal(amount).multiply(new BigDecimal(samples));
+        System.out.println(divisor);
+        result = result.divide(divisor, 20, RoundingMode.HALF_UP).multiply(new BigDecimal(8));
+        return result;
+        
     }
 }
